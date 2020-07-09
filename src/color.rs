@@ -17,6 +17,36 @@ impl Color {
     pub fn new(r: f64, g: f64, b: f64) -> Self {
         Self { data: [r, g, b] }
     }
+
+    pub fn white() -> Self {
+        Self {
+            data: [1.0, 1.0, 1.0],
+        }
+    }
+
+    pub fn black() -> Self {
+        Self {
+            data: [0.0, 0.0, 0.0],
+        }
+    }
+
+    pub fn red() -> Self {
+        Self {
+            data: [1.0, 0.0, 0.0],
+        }
+    }
+
+    pub fn green() -> Self {
+        Self {
+            data: [0.0, 1.0, 0.0],
+        }
+    }
+
+    pub fn blue() -> Self {
+        Self {
+            data: [0.0, 0.0, 1.0],
+        }
+    }
 }
 
 impl std::ops::Add for Color {

@@ -21,13 +21,32 @@ impl Location {
     }
 }
 
-impl std::ops::Add<Direction> for Location {
-    type Output = Location;
+impl std::ops::Sub for Location {
+    type Output = Direction;
 
-    fn add(self, other: Self) -> Self {
+    fn sub(self, other: Self) -> Direction {
         let mut data = [0.0; 3];
 
         for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
+            *d = s - o;
+        }
+
+        Direction::new(data[0], data[1], data[2])
+    }
+}
+
+impl std::ops::Add<Direction> for Location {
+    type Output = Location;
+
+    fn add(self, other: Direction) -> Self {
+        let mut data = [0.0; 3];
+
+        for ((s, o), d) in self
+            .data
+            .iter()
+            .zip(other.as_slice().iter())
+            .zip(data.iter_mut())
+        {
             *d = s + o;
         }
 
@@ -38,10 +57,15 @@ impl std::ops::Add<Direction> for Location {
 impl std::ops::Sub<Direction> for Location {
     type Output = Location;
 
-    fn sub(self, other: Self) -> Self {
+    fn sub(self, other: Direction) -> Self {
         let mut data = [0.0; 3];
 
-        for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
+        for ((s, o), d) in self
+            .data
+            .iter()
+            .zip(other.as_slice().iter())
+            .zip(data.iter_mut())
+        {
             *d = s - o;
         }
 
@@ -49,46 +73,7 @@ impl std::ops::Sub<Direction> for Location {
     }
 }
 
-impl std::ops::Mul<f64> for Location {
-    type Output = Location;
-
-    fn mul(self, other: f64) -> Self {
-        let mut data = [0.0; 3];
-
-        for (s, d) in self.data.iter().zip(data.iter_mut()) {
-            *d = s * other;
-        }
-
-        Self { data }
-    }
-}
-
-impl std::ops::Div<f64> for Location {
-    type Output = Location;
-
-    fn div(self, other: f64) -> Self {
-        let mut data = [0.0; 3];
-
-        for (s, d) in self.data.iter().zip(data.iter_mut()) {
-            *d = s / other;
-        }
-
-        Self { data }
-    }
-}
-
 mod test {
-
-    #[test]
-    fn add() {
-        let c1 = super::Location::new(0.0, 1.0, 2.0);
-        let c2 = super::Location::new(3.0, 4.0, 5.0);
-
-        let c3 = c1 + c2;
-        assert_eq!(c3.x(), 3.0);
-        assert_eq!(c3.y(), 5.0);
-        assert_eq!(c3.z(), 7.0);
-    }
 
     #[test]
     fn sub() {
@@ -102,22 +87,24 @@ mod test {
     }
 
     #[test]
-    fn mul_f64() {
+    fn add_direction() {
         let c1 = super::Location::new(0.0, 1.0, 2.0);
+        let c2 = super::Direction::new(3.0, 4.0, 5.0);
 
-        let c3 = c1 * 3.0;
-        assert_eq!(c3.x(), 0.0);
-        assert_eq!(c3.y(), 3.0);
-        assert_eq!(c3.z(), 6.0);
+        let c3 = c1 + c2;
+        assert_eq!(c3.x(), 3.0);
+        assert_eq!(c3.y(), 5.0);
+        assert_eq!(c3.z(), 7.0);
     }
 
     #[test]
-    fn div_f64() {
+    fn sub_direction() {
         let c1 = super::Location::new(0.0, 1.0, 2.0);
+        let c2 = super::Direction::new(3.0, 4.0, 5.0);
 
-        let c3 = c1 / 3.0;
-        assert_eq!(c3.x(), 0.0);
-        assert_eq!(c3.y(), 1.0 / 3.0);
-        assert_eq!(c3.z(), 2.0 / 3.0);
+        let c3 = c1 - c2;
+        assert_eq!(c3.x(), -3.0);
+        assert_eq!(c3.y(), -3.0);
+        assert_eq!(c3.z(), -3.0);
     }
 }
