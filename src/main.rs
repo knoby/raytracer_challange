@@ -1,6 +1,6 @@
 mod color;
 mod direction;
-mod location;
+//mod location;
 
 fn main() {
     // Create a test image
