@@ -1,3 +1,7 @@
+mod color;
+mod direction;
+mod location;
+
 fn main() {
     // Create a test image
     let mut my_image: image::RgbImage = image::RgbImage::new(1330, 768);
@@ -7,6 +11,7 @@ fn main() {
     let scale_y = my_image.height();
 
     {
+        println!("Creating image...");
         let mut progress = progress_bar::progress_bar::ProgressBar::new(scale_y as usize);
         progress.set_action(
             "Raytracing",
@@ -24,6 +29,6 @@ fn main() {
         }
         println!();
     }
-
+    println!("Saving image ...");
     my_image.save("test.png").unwrap();
 }
