@@ -14,6 +14,18 @@ impl Color {
         self.data[2]
     }
 
+    pub fn set_r(&mut self, r: f64) {
+        self.data[0] = r;
+    }
+
+    pub fn set_g(&mut self, g: f64) {
+        self.data[1] = g;
+    }
+
+    pub fn set_b(&mut self, b: f64) {
+        self.data[2] = b;
+    }
+
     pub fn new(r: f64, g: f64, b: f64) -> Self {
         Self { data: [r, g, b] }
     }

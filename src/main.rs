@@ -1,10 +1,45 @@
 mod color;
 mod direction;
 mod location;
+use color::Color;
+use direction::Direction;
+use location::Location;
+use ray::Ray;
+
+mod ray {
+    use crate::direction::Direction;
+    use crate::location::Location;
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct Ray {
+        pub origin: Location,
+        pub direction: Direction,
+    }
+}
+
+mod objects {
+    use crate::location::Location;
+    use crate::ray::Ray;
+    pub struct Sphere {
+        pub origin: Location,
+        pub radius: f64,
+    }
+
+    impl Sphere {
+        /// Checks if a ray hits the sphere
+        pub fn hit_ray(&self, ray: &Ray) -> bool {
+            // From https://www.mathematik-oberstufe.de/vektoren/a/abstand-punkt-gerade-formel.html
+            let d =
+                (self.origin - ray.origin).cross(ray.direction).length() / ray.direction.length();
+            // Check if less or equal to radius --> is Hit
+            d <= self.radius
+        }
+    }
+}
 
 fn main() {
     // Create a test image
-    let mut my_image: image::RgbImage = image::RgbImage::new(1330, 768);
+    let mut my_image: image::RgbImage = image::RgbImage::new(1368, 768);
 
     // Get the size of the image
     let scale_x = my_image.width();
@@ -12,6 +47,13 @@ fn main() {
 
     {
         println!("Creating image...");
+
+        // Create a simple object
+        let sphere = objects::Sphere {
+            origin: Location::new(0.5, 0.0, 0.0),
+            radius: 0.2,
+        };
+
         let mut progress = progress_bar::progress_bar::ProgressBar::new(scale_y as usize);
         progress.set_action(
             "Raytracing",
@@ -19,10 +61,44 @@ fn main() {
             progress_bar::color::Style::Bold,
         );
 
+        // Define the camera
+        let cam_origin = Location::new(0.0, 0.0, 0.0);
+        let cam_direction = Direction::new(1.0, 0.0, 0.0);
+
+        // Define the viewport
+        // In this case the height is 1 and the width depends on the image aspect ratio
+        let aspect_ratio = scale_y as f64 / scale_x as f64;
+        let viewport_height = 1.0;
+        let viewport_widht = viewport_height / aspect_ratio;
+        let focal_length = 1.0; // Distance from camera Origitn to viewport
+        let horizontal = Direction::new(0.0, -1.0, 0.0).norm();
+        let vertical = Direction::new(0.0, 0.0, -1.0).norm();
+        let viewport_top_left = cam_origin + cam_direction.norm() * focal_length
+            - horizontal * viewport_widht / 2.0
+            - vertical * viewport_height / 2.0;
+        // Some helper directions
+
+        // Iterate over the image
         for (x, y, pixel) in my_image.enumerate_pixels_mut() {
-            pixel.0[0] = (255.0 * (scale_y - y) as f64 / scale_y as f64) as u8;
-            pixel.0[1] = (255.0 * x as f64 / scale_x as f64) as u8;
-            pixel.0[2] = (255.0 * y as f64 / scale_y as f64) as u8;
+            // Calcualte the ray to the pixel center
+            let ray = Ray {
+                origin: cam_origin,
+                direction: ((viewport_top_left
+                    + horizontal / scale_x as f64 * x as f64 * viewport_widht
+                    + vertical / scale_y as f64 * y as f64 * viewport_height)
+                    - cam_origin),
+            };
+
+            // If its a hit draw red, otherwise the background color
+            let color = if sphere.hit_ray(&ray) {
+                Color::red()
+            } else {
+                let t = (ray.direction.norm().z() + 0.5) / viewport_height;
+                Color::white() * (1.0 - t) + Color::blue() * t
+            };
+            pixel.0[0] = (color.r() * 255.0) as u8;
+            pixel.0[1] = (color.g() * 255.0) as u8;
+            pixel.0[2] = (color.b() * 255.0) as u8;
             if x == scale_x as u32 - 1 {
                 progress.inc();
             }
