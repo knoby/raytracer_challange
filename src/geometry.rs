@@ -1,27 +1,36 @@
+//! This module includes the implementation for geometry related things in the raytracer.
+//! The most used ones are Location and Direction
+
+/// Structure to hold information about a direction in the world.
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 pub struct Direction {
     data: [f64; 3],
 }
 
 impl Direction {
+    /// Returns the x-component
     pub fn x(&self) -> f64 {
         self.data[0]
     }
+    /// Returns the y-component
     pub fn y(&self) -> f64 {
         self.data[1]
     }
+    /// Returns the z-component
     pub fn z(&self) -> f64 {
         self.data[2]
     }
-
+    /// Returns the direction coordinates as a slice.
     pub fn as_slice(&self) -> [f64; 3] {
         self.data
     }
 
+    /// Creates a new Direction with the given direction coefficients.
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { data: [x, y, z] }
     }
 
+    /// Cross Product of two directions. Returns also a direction.
     pub fn cross(self, other: Self) -> Self {
         let x = self.y() * other.z() - self.z() * other.y();
         let y = self.x() * other.z() - self.z() * other.x();
@@ -30,14 +39,17 @@ impl Direction {
         Self::new(x, y, z)
     }
 
+    /// Dot Product of two directions.
     pub fn dot(self, other: Self) -> f64 {
         self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
     }
 
+    /// Returns the length of the direction vector.
     pub fn length(self) -> f64 {
         (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
     }
 
+    /// Calculate the normalized form of the direction (Length == 1).
     pub fn norm(self) -> Self {
         self / self.length()
     }
@@ -99,6 +111,90 @@ impl std::ops::Div<f64> for Direction {
     }
 }
 
+/// Struct holds information about the position in the world
+#[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
+pub struct Location {
+    data: [f64; 3],
+}
+
+impl Location {
+    /// Returns the x-component
+    pub fn x(&self) -> f64 {
+        self.data[0]
+    }
+
+    /// Returns the x-component
+    pub fn y(&self) -> f64 {
+        self.data[1]
+    }
+
+    /// Returns the x-component
+    pub fn z(&self) -> f64 {
+        self.data[2]
+    }
+
+    /// Create new Location Object at the given coordinates
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { data: [x, y, z] }
+    }
+
+    /// Creates a new Location at the origin (0.0, 0.0, 0.0).
+    pub fn origin() -> Self {
+        Self::new(0.0, 0.0, 0.0)
+    }
+}
+
+impl std::ops::Sub for Location {
+    type Output = Direction;
+
+    fn sub(self, other: Self) -> Direction {
+        let mut data = [0.0; 3];
+
+        for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
+            *d = s - o;
+        }
+
+        Direction::new(data[0], data[1], data[2])
+    }
+}
+
+impl std::ops::Add<Direction> for Location {
+    type Output = Location;
+
+    fn add(self, other: Direction) -> Self {
+        let mut data = [0.0; 3];
+
+        for ((s, o), d) in self
+            .data
+            .iter()
+            .zip(other.as_slice().iter())
+            .zip(data.iter_mut())
+        {
+            *d = s + o;
+        }
+
+        Self { data }
+    }
+}
+
+impl std::ops::Sub<Direction> for Location {
+    type Output = Location;
+
+    fn sub(self, other: Direction) -> Self {
+        let mut data = [0.0; 3];
+
+        for ((s, o), d) in self
+            .data
+            .iter()
+            .zip(other.as_slice().iter())
+            .zip(data.iter_mut())
+        {
+            *d = s - o;
+        }
+
+        Self { data }
+    }
+}
 mod test {
 
     #[test]

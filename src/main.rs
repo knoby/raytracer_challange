@@ -1,41 +1,9 @@
 mod color;
-mod direction;
-mod location;
+mod geometry;
+mod scene;
 use color::Color;
-use direction::Direction;
-use location::Location;
-use ray::Ray;
-
-mod ray {
-    use crate::direction::Direction;
-    use crate::location::Location;
-
-    #[derive(Debug, Clone, Copy)]
-    pub struct Ray {
-        pub origin: Location,
-        pub direction: Direction,
-    }
-}
-
-mod objects {
-    use crate::location::Location;
-    use crate::ray::Ray;
-    pub struct Sphere {
-        pub origin: Location,
-        pub radius: f64,
-    }
-
-    impl Sphere {
-        /// Checks if a ray hits the sphere
-        pub fn hit_ray(&self, ray: &Ray) -> bool {
-            // From https://www.mathematik-oberstufe.de/vektoren/a/abstand-punkt-gerade-formel.html
-            let d =
-                (self.origin - ray.origin).cross(ray.direction).length() / ray.direction.length();
-            // Check if less or equal to radius --> is Hit
-            d <= self.radius
-        }
-    }
-}
+use geometry::{Direction, Location};
+use scene::*;
 
 fn main() {
     // Create a test image
@@ -50,7 +18,7 @@ fn main() {
 
         // Create a simple object
         let sphere = objects::Sphere {
-            origin: Location::new(0.5, 0.0, 0.0),
+            origin: Location::new(1.0, 0.0, 0.0),
             radius: 0.2,
         };
 
@@ -90,7 +58,7 @@ fn main() {
             };
 
             // If its a hit draw red, otherwise the background color
-            let color = if sphere.hit_ray(&ray) {
+            let color = if let Some(_) = sphere.get_hits(&ray) {
                 Color::red()
             } else {
                 let t = (ray.direction.norm().z() + 0.5) / viewport_height;
