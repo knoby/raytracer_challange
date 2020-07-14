@@ -10,7 +10,12 @@ pub struct Ray {
 }
 
 /// Holding information about a hit of a ray and an object.
-pub struct Hit {}
+pub struct Hit {
+    /// Distance of the hint in direction of theray
+    pub distance: f64,
+    /// Direction of the normal in the hitpoint
+    pub normal: Direction,
+}
 
 /// All Objects that interact in some way with a ray must implment this Trait
 pub trait Hittable {
@@ -39,15 +44,30 @@ pub mod objects {
             // Calculate wether it is a hit or not
             let d_1 = ray_dir.dot(ray_orig).powi(2);
             let d_2 = ray_orig.length().powi(2) - r.powi(2);
+            let d_3 = -ray_dir.dot(ray_orig);
             let discriminant = d_1 - d_2;
+            let mut hits = Vec::<Hit>::new();
 
             if discriminant > 0.0 {
-                let d_3 = -ray_dir.dot(ray_orig);
-                Some(vec![Hit {}, Hit {}])
+                // Calculate the hits
+                // Safe to call sqrt because we checked the value under the root
+                hits.push(Hit {
+                    distance: d_3 + discriminant.sqrt(),
+                    normal: Direction::new(0.0, 0.0, 0.0),
+                });
+                hits.push(Hit {
+                    distance: d_3 - discriminant.sqrt(),
+                    normal: Direction::new(0.0, 0.0, 0.0),
+                });
+                Some(hits)
             } else if discriminant < -0.0 {
                 None
             } else {
-                Some(vec![Hit {}])
+                hits.push(Hit {
+                    distance: d_3,
+                    normal: Direction::new(0.0, 0.0, 0.0),
+                });
+                Some(hits)
             }
         }
     }

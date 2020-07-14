@@ -58,8 +58,13 @@ fn main() {
             };
 
             // If its a hit draw red, otherwise the background color
-            let color = if let Some(_) = sphere.get_hits(&ray) {
-                Color::red()
+            let color = if let Some(hits) = sphere.get_hits(&ray) {
+                if hits[0].distance > 0.0 {
+                    Color::red()
+                } else {
+                    let t = (ray.direction.norm().z() + 0.5) / viewport_height;
+                    Color::white() * (1.0 - t) + Color::blue() * t
+                }
             } else {
                 let t = (ray.direction.norm().z() + 0.5) / viewport_height;
                 Color::white() * (1.0 - t) + Color::blue() * t
