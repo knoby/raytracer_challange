@@ -1,3 +1,4 @@
+mod camera;
 mod color;
 mod geometry;
 mod scene;
@@ -7,22 +8,23 @@ use scene::*;
 
 fn main() {
     // Create a test image
-    let mut my_image: image::RgbImage = image::RgbImage::new(1368, 768);
-
-    // Get the size of the image
-    let scale_x = my_image.width();
-    let scale_y = my_image.height();
+    let mut my_image: image::RgbImage = image::RgbImage::new(1386, 768);
 
     {
         println!("Creating image...");
 
         // Create a simple object
-        let sphere = objects::Sphere {
+        let mut objects = Vec::new();
+        objects.push(objects::Sphere {
             origin: Location::new(1.0, 0.0, 0.0),
-            radius: 0.2,
-        };
+            radius: 0.5,
+        });
+        objects.push(objects::Sphere {
+            origin: Location::new(1.0, 0.0, -100.5),
+            radius: 100.0,
+        });
 
-        let mut progress = progress_bar::progress_bar::ProgressBar::new(scale_y as usize);
+        let mut progress = progress_bar::progress_bar::ProgressBar::new(my_image.height() as usize);
         progress.set_action(
             "Raytracing",
             progress_bar::color::Color::Blue,
@@ -30,49 +32,43 @@ fn main() {
         );
 
         // Define the camera
-        let cam_origin = Location::new(0.0, 0.0, 0.0);
-        let cam_direction = Direction::new(1.0, 0.0, 0.0);
-
-        // Define the viewport
-        // In this case the height is 1 and the width depends on the image aspect ratio
-        let aspect_ratio = scale_y as f64 / scale_x as f64;
-        let viewport_height = 1.0;
-        let viewport_widht = viewport_height / aspect_ratio;
-        let focal_length = 1.0; // Distance from camera Origitn to viewport
-        let horizontal = Direction::new(0.0, -1.0, 0.0).norm();
-        let vertical = Direction::new(0.0, 0.0, -1.0).norm();
-        let viewport_top_left = cam_origin + cam_direction.norm() * focal_length
-            - horizontal * viewport_widht / 2.0
-            - vertical * viewport_height / 2.0;
-        // Some helper directions
+        let cam = camera::Camera::new(
+            Location::origin(),
+            Direction::new(1.0, 0.0, 0.0),
+            my_image.width(),
+            my_image.height(),
+            1.0,
+        );
 
         // Iterate over the image
-        for (x, y, pixel) in my_image.enumerate_pixels_mut() {
-            // Calcualte the ray to the pixel center
-            let ray = Ray {
-                origin: cam_origin,
-                direction: ((viewport_top_left
-                    + horizontal / scale_x as f64 * x as f64 * viewport_widht
-                    + vertical / scale_y as f64 * y as f64 * viewport_height)
-                    - cam_origin),
-            };
-
-            // If its a hit draw red, otherwise the background color
-            let color = if let Some(hits) = sphere.get_hits(&ray) {
-                if hits[0].distance > 0.0 {
-                    Color::red()
+        for (x, y, ray) in cam {
+            // Check all objects for a hit
+            let (_distance, normal) = objects.iter().fold((f64::MAX, None), |acc, sphere| {
+                if let Some(hits) = sphere.get_hits(&ray) {
+                    // Check distance
+                    if hits[0].distance < acc.0 && hits[0].distance > 0.0 {
+                        (hits[0].distance, Some(hits[0].normal))
+                    } else {
+                        acc
+                    }
                 } else {
-                    let t = (ray.direction.norm().z() + 0.5) / viewport_height;
-                    Color::white() * (1.0 - t) + Color::blue() * t
+                    acc
                 }
+            });
+            let color = if let Some(hit_normal) = normal {
+                let hit_normal = hit_normal.as_slice();
+                // Calculate color based on the normal of the hit
+                Color::new(-hit_normal[1] / 2.0 + 0.5, 0.0, 0.0)
+                    + Color::new(0.0, hit_normal[2] / 2.0 + 0.5, 0.0)
+                    + Color::new(0.0, 0.0, -hit_normal[0] / 2.0 + 0.5)
             } else {
-                let t = (ray.direction.norm().z() + 0.5) / viewport_height;
+                let t = ray.direction.norm().z() / 2.0 + 0.5;
                 Color::white() * (1.0 - t) + Color::blue() * t
             };
-            pixel.0[0] = (color.r() * 255.0) as u8;
-            pixel.0[1] = (color.g() * 255.0) as u8;
-            pixel.0[2] = (color.b() * 255.0) as u8;
-            if x == scale_x as u32 - 1 {
+            my_image.get_pixel_mut(x, y).0[0] = (color.r() * 255.9999) as u8;
+            my_image.get_pixel_mut(x, y).0[1] = (color.g() * 255.9999) as u8;
+            my_image.get_pixel_mut(x, y).0[2] = (color.b() * 255.9999) as u8;
+            if x == 0 {
                 progress.inc();
             }
         }

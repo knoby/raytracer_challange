@@ -51,22 +51,19 @@ pub mod objects {
             if discriminant > 0.0 {
                 // Calculate the hits
                 // Safe to call sqrt because we checked the value under the root
-                hits.push(Hit {
-                    distance: d_3 + discriminant.sqrt(),
-                    normal: Direction::new(0.0, 0.0, 0.0),
-                });
-                hits.push(Hit {
-                    distance: d_3 - discriminant.sqrt(),
-                    normal: Direction::new(0.0, 0.0, 0.0),
-                });
+                let distance = d_3 - discriminant.sqrt();
+                let normal = (ray_dir * distance + ray_orig).norm();
+                hits.push(Hit { distance, normal });
+                let distance = d_3 + discriminant.sqrt();
+                let normal = (ray_dir * distance + ray_orig).norm();
+                hits.push(Hit { distance, normal });
                 Some(hits)
             } else if discriminant < -0.0 {
                 None
             } else {
-                hits.push(Hit {
-                    distance: d_3,
-                    normal: Direction::new(0.0, 0.0, 0.0),
-                });
+                let distance = d_3;
+                let normal = (ray_dir * distance + ray_orig).norm();
+                hits.push(Hit { distance, normal });
                 Some(hits)
             }
         }

@@ -53,6 +53,11 @@ impl Direction {
     pub fn norm(self) -> Self {
         self / self.length()
     }
+
+    /// Inverts all components
+    pub fn invert(self) -> Self {
+        self * (-1.0)
+    }
 }
 
 impl std::ops::Add for Direction {
