@@ -4,6 +4,7 @@ use crate::color::Color;
 use crate::geometry::{Direction, Location};
 
 const RAY_DEPTH_LIMIG: u32 = 50;
+const RENDER_NORMAL: bool = false;
 
 pub struct World {
     objects: Vec<Box<dyn Hittable>>,
@@ -33,16 +34,31 @@ impl World {
 
         // Check if the ray is hitting something
         if let (_hit_distance, Some(hit_normal)) = self.get_hit(ray) {
-            // Return color based on the normal
-            let hit_normal = hit_normal.as_slice();
-            // Calculate color based on the normal of the hit
-            Color::new(-hit_normal[1] / 2.0 + 0.5, 0.0, 0.0)
-                + Color::new(0.0, hit_normal[2] / 2.0 + 0.5, 0.0)
-                + Color::new(0.0, 0.0, -hit_normal[0] / 2.0 + 0.5)
+            if RENDER_NORMAL {
+                // Return color based on the normal
+                let hit_normal = hit_normal.as_slice();
+                // Calculate color based on the normal of the hit
+                Color::new(-hit_normal[1] / 2.0 + 0.5, 0.0, 0.0)
+                    + Color::new(0.0, hit_normal[2] / 2.0 + 0.5, 0.0)
+                    + Color::new(0.0, 0.0, -hit_normal[0] / 2.0 + 0.5)
+            } else {
+                // Do real render things
+                // The point in the scene where the ray hit the object
+                let target = ray.origin + ray.direction * _hit_distance;
+                // Calculate the new direction Based on the normal and a random unit vector
+                let new_ray = (hit_normal + random_in_unit_sphere()).norm();
+                self.get_ray_color(
+                    Ray {
+                        origin: target,
+                        direction: new_ray,
+                    },
+                    depth + 1,
+                ) * 0.5
+            }
         } else {
             // Did not hit an object.. Return some background color
             let t = ray.direction.norm().z() / 2.0 + 0.5;
-            Color::white() * (1.0 - t) + Color::blue() * t
+            Color::white() * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
         }
     }
 
@@ -53,7 +69,7 @@ impl World {
             .fold((f64::MAX, None), |act_hit, object| {
                 if let Some(hit) = object.get_hits(&ray) {
                     // Check distance
-                    if hit.distance < act_hit.0 && hit.distance > 0.0 {
+                    if hit.distance < act_hit.0 && hit.distance > 0.001 {
                         (hit.distance, Some(hit.normal))
                     } else {
                         act_hit
@@ -150,6 +166,19 @@ pub mod objects {
                     None
                 }
             }
+        }
+    }
+}
+
+/// Some helper function
+fn random_in_unit_sphere() -> Direction {
+    // Create a bad and ugly random generator
+    let offset_dir = Direction::new(1.0, 1.0, 1.0);
+    loop {
+        let rnd_dir =
+            Direction::new(rand::random(), rand::random(), rand::random()) * 2.0 - offset_dir;
+        if rnd_dir.length() <= 1.0 {
+            return rnd_dir;
         }
     }
 }

@@ -43,10 +43,12 @@ fn main() {
                 let ray = cam.get_ray(u, v).unwrap();
                 color = color + world.get_ray_color(ray, 0);
             }
+            // Correct for anti aliasing
             color = color / ANTI_ALIASING as f64;
-            pixel.0[0] = (color.r() * 255.9999) as u8;
-            pixel.0[1] = (color.g() * 255.9999) as u8;
-            pixel.0[2] = (color.b() * 255.9999) as u8;
+            // Do some gamma corrections
+            pixel.0[0] = (color.r().sqrt() * 255.9999) as u8;
+            pixel.0[1] = (color.g().sqrt() * 255.9999) as u8;
+            pixel.0[2] = (color.b().sqrt() * 255.9999) as u8;
             if u == 0 {
                 progress.inc();
             }
