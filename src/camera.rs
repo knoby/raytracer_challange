@@ -3,6 +3,7 @@
 use crate::geometry::Direction;
 use crate::geometry::Location;
 use crate::scene::Ray;
+use rand::prelude::*;
 
 // Definitins only for calculation
 /// Height of the Viewport. Is used for some Calculations internaly.
@@ -23,12 +24,12 @@ pub struct Camera {
     focal_length: f64,
     /// Position of the upper Left corener of the Viewport
     viewport_top_left: Location,
-    /// Current Iterator Position. This Ray will be returned next
-    iterator_state: [u32; 2],
     /// Horizontal Direction of the viewport
     viewport_horizontal: Direction,
     /// Vertical Direction of the viewport
     viewport_vertical: Direction,
+    /// Random number generator for anti alysing
+    rng: rand::rngs::ThreadRng,
 }
 
 impl Camera {
@@ -65,42 +66,32 @@ impl Camera {
             viewport_vertical,
             viewport_top_left,
             viewport_size: (width, height),
-            iterator_state: [0, 0],
+            rng: thread_rng(),
         }
     }
-}
 
-/// Implement the Iterator trait for the camera
-impl Iterator for Camera {
-    type Item = (u32, u32, Ray);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.iterator_state[1] < self.viewport_size.1 {
-            // All Pixels are coved if the current line is less than the size of the viewport
+    pub fn get_ray(&mut self, u: u32, v: u32) -> Result<Ray, String> {
+        // Create random offset in pixel
+        let u_r: f64 = self.rng.gen();
+        let v_r: f64 = self.rng.gen();
+        // Check if the target pixel is within the viewport
+        if u < self.viewport_size.0 && v < self.viewport_size.1 {
             let viewport_target = self.viewport_top_left
                 + self.viewport_horizontal
                     * (self.aspect_ratio / self.viewport_size.0 as f64
-                        * self.iterator_state[0] as f64
+                        * (u as f64 + u_r)
                         * VIEWPORT_HEIGHT)
                 - self.viewport_vertical
-                    * (1.0 / self.viewport_size.1 as f64
-                        * self.iterator_state[1] as f64
-                        * VIEWPORT_HEIGHT);
+                    * (1.0 / self.viewport_size.1 as f64 * (v as f64 + v_r) * VIEWPORT_HEIGHT);
 
             // Construct the ray
             let ray = Ray {
-                direction: viewport_target - Location::origin(),
+                direction: (viewport_target - Location::origin()).norm(),
                 origin: self.origin,
             };
-            let current_ray = (self.iterator_state[0], self.iterator_state[1], ray);
-            self.iterator_state[0] += 1;
-            if self.iterator_state[0] >= self.viewport_size.0 {
-                self.iterator_state[0] = 0;
-                self.iterator_state[1] += 1;
-            };
-            Some(current_ray)
+            Ok(ray)
         } else {
-            None
+            Err("Pixel out of Viewport".into())
         }
     }
 }

@@ -64,13 +64,13 @@ impl std::ops::Add for Direction {
     type Output = Direction;
 
     fn add(self, other: Self) -> Self {
-        let mut data = [0.0; 3];
-
-        for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
-            *d = s + o;
+        Self {
+            data: [
+                self.data[0] + other.data[0],
+                self.data[1] + other.data[1],
+                self.data[2] + other.data[2],
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -78,13 +78,13 @@ impl std::ops::Sub for Direction {
     type Output = Direction;
 
     fn sub(self, other: Self) -> Self {
-        let mut data = [0.0; 3];
-
-        for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
-            *d = s - o;
+        Self {
+            data: [
+                self.data[0] - other.data[0],
+                self.data[1] - other.data[1],
+                self.data[2] - other.data[2],
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -92,13 +92,13 @@ impl std::ops::Mul<f64> for Direction {
     type Output = Direction;
 
     fn mul(self, other: f64) -> Self {
-        let mut data = [0.0; 3];
-
-        for (s, d) in self.data.iter().zip(data.iter_mut()) {
-            *d = s * other;
+        Self {
+            data: [
+                self.data[0] * other,
+                self.data[1] * other,
+                self.data[2] * other,
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -106,13 +106,13 @@ impl std::ops::Div<f64> for Direction {
     type Output = Direction;
 
     fn div(self, other: f64) -> Self {
-        let mut data = [0.0; 3];
-
-        for (s, d) in self.data.iter().zip(data.iter_mut()) {
-            *d = s / other;
+        Self {
+            data: [
+                self.data[0] / other,
+                self.data[1] / other,
+                self.data[2] / other,
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -153,13 +153,11 @@ impl std::ops::Sub for Location {
     type Output = Direction;
 
     fn sub(self, other: Self) -> Direction {
-        let mut data = [0.0; 3];
-
-        for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
-            *d = s - o;
-        }
-
-        Direction::new(data[0], data[1], data[2])
+        Direction::new(
+            self.data[0] - other.data[0],
+            self.data[1] - other.data[1],
+            self.data[2] - other.data[2],
+        )
     }
 }
 
@@ -167,18 +165,13 @@ impl std::ops::Add<Direction> for Location {
     type Output = Location;
 
     fn add(self, other: Direction) -> Self {
-        let mut data = [0.0; 3];
-
-        for ((s, o), d) in self
-            .data
-            .iter()
-            .zip(other.as_slice().iter())
-            .zip(data.iter_mut())
-        {
-            *d = s + o;
+        Self {
+            data: [
+                self.data[0] + other.data[0],
+                self.data[1] + other.data[1],
+                self.data[2] + other.data[2],
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -186,18 +179,13 @@ impl std::ops::Sub<Direction> for Location {
     type Output = Location;
 
     fn sub(self, other: Direction) -> Self {
-        let mut data = [0.0; 3];
-
-        for ((s, o), d) in self
-            .data
-            .iter()
-            .zip(other.as_slice().iter())
-            .zip(data.iter_mut())
-        {
-            *d = s - o;
+        Self {
+            data: [
+                self.data[0] - other.data[0],
+                self.data[1] - other.data[1],
+                self.data[2] - other.data[2],
+            ],
         }
-
-        Self { data }
     }
 }
 mod test {

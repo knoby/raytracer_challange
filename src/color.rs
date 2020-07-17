@@ -65,13 +65,13 @@ impl std::ops::Add for Color {
     type Output = Color;
 
     fn add(self, other: Self) -> Self {
-        let mut data = [0.0; 3];
-
-        for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
-            *d = s + o;
+        Self {
+            data: [
+                self.data[0] + other.data[0],
+                self.data[1] + other.data[1],
+                self.data[2] + other.data[2],
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -79,13 +79,13 @@ impl std::ops::Sub for Color {
     type Output = Color;
 
     fn sub(self, other: Self) -> Self {
-        let mut data = [0.0; 3];
-
-        for ((s, o), d) in self.data.iter().zip(other.data.iter()).zip(data.iter_mut()) {
-            *d = s - o;
+        Self {
+            data: [
+                self.data[0] - other.data[0],
+                self.data[1] - other.data[1],
+                self.data[2] - other.data[2],
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -93,13 +93,13 @@ impl std::ops::Mul<f64> for Color {
     type Output = Color;
 
     fn mul(self, other: f64) -> Self {
-        let mut data = [0.0; 3];
-
-        for (s, d) in self.data.iter().zip(data.iter_mut()) {
-            *d = s * other;
+        Self {
+            data: [
+                self.data[0] * other,
+                self.data[1] * other,
+                self.data[2] * other,
+            ],
         }
-
-        Self { data }
     }
 }
 
@@ -107,13 +107,13 @@ impl std::ops::Div<f64> for Color {
     type Output = Color;
 
     fn div(self, other: f64) -> Self {
-        let mut data = [0.0; 3];
-
-        for (s, d) in self.data.iter().zip(data.iter_mut()) {
-            *d = s / other;
+        Self {
+            data: [
+                self.data[0] / other,
+                self.data[1] / other,
+                self.data[2] / other,
+            ],
         }
-
-        Self { data }
     }
 }
 

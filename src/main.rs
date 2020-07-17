@@ -6,9 +6,11 @@ use color::Color;
 use geometry::{Direction, Location};
 use scene::*;
 
+const ANTI_ALIASING: u32 = 100;
+
 fn main() {
     // Create a test image
-    let mut my_image: image::RgbImage = image::RgbImage::new(1386, 768);
+    let mut my_image: image::RgbImage = image::RgbImage::new(400, 300);
 
     {
         println!("Creating image...");
@@ -32,7 +34,7 @@ fn main() {
         );
 
         // Define the camera
-        let cam = camera::Camera::new(
+        let mut cam = camera::Camera::new(
             Location::origin(),
             Direction::new(1.0, 0.0, 0.0),
             my_image.width(),
@@ -41,34 +43,41 @@ fn main() {
         );
 
         // Iterate over the image
-        for (x, y, ray) in cam {
+        for (u, v, pixel) in my_image.enumerate_pixels_mut() {
             // Check all objects for a hit
-            let (_distance, normal) = objects.iter().fold((f64::MAX, None), |acc, sphere| {
-                if let Some(hits) = sphere.get_hits(&ray) {
-                    // Check distance
-                    if hits[0].distance < acc.0 && hits[0].distance > 0.0 {
-                        (hits[0].distance, Some(hits[0].normal))
+            let mut color = Color::black();
+            for _ in 0..ANTI_ALIASING {
+                // Get a ray to the pixel from the cam
+                let ray = cam.get_ray(u, v).unwrap();
+                let (_distance, normal) = objects.iter().fold((f64::MAX, None), |acc, sphere| {
+                    if let Some(hit) = sphere.get_hits(&ray) {
+                        // Check distance
+                        if hit.distance < acc.0 && hit.distance > 0.0 {
+                            (hit.distance, Some(hit.normal))
+                        } else {
+                            acc
+                        }
                     } else {
                         acc
                     }
-                } else {
-                    acc
-                }
-            });
-            let color = if let Some(hit_normal) = normal {
-                let hit_normal = hit_normal.as_slice();
-                // Calculate color based on the normal of the hit
-                Color::new(-hit_normal[1] / 2.0 + 0.5, 0.0, 0.0)
-                    + Color::new(0.0, hit_normal[2] / 2.0 + 0.5, 0.0)
-                    + Color::new(0.0, 0.0, -hit_normal[0] / 2.0 + 0.5)
-            } else {
-                let t = ray.direction.norm().z() / 2.0 + 0.5;
-                Color::white() * (1.0 - t) + Color::blue() * t
-            };
-            my_image.get_pixel_mut(x, y).0[0] = (color.r() * 255.9999) as u8;
-            my_image.get_pixel_mut(x, y).0[1] = (color.g() * 255.9999) as u8;
-            my_image.get_pixel_mut(x, y).0[2] = (color.b() * 255.9999) as u8;
-            if x == 0 {
+                });
+                color = color
+                    + if let Some(hit_normal) = normal {
+                        let hit_normal = hit_normal.as_slice();
+                        // Calculate color based on the normal of the hit
+                        Color::new(-hit_normal[1] / 2.0 + 0.5, 0.0, 0.0)
+                            + Color::new(0.0, hit_normal[2] / 2.0 + 0.5, 0.0)
+                            + Color::new(0.0, 0.0, -hit_normal[0] / 2.0 + 0.5)
+                    } else {
+                        let t = ray.direction.norm().z() / 2.0 + 0.5;
+                        Color::white() * (1.0 - t) + Color::blue() * t
+                    };
+            }
+            color = color / ANTI_ALIASING as f64;
+            pixel.0[0] = (color.r() * 255.9999) as u8;
+            pixel.0[1] = (color.g() * 255.9999) as u8;
+            pixel.0[2] = (color.b() * 255.9999) as u8;
+            if u == 0 {
                 progress.inc();
             }
         }
