@@ -1,6 +1,69 @@
 //! Objects used to describe a scene for the ray tracer.
 
+use crate::color::Color;
 use crate::geometry::{Direction, Location};
+
+const RAY_DEPTH_LIMIG: u32 = 50;
+
+pub struct World {
+    objects: Vec<Box<dyn Hittable>>,
+}
+
+impl World {
+    /// Create a sample world with a small and a very large sphere
+    pub fn sample_world() -> Self {
+        let mut objects: Vec<Box<dyn Hittable>> = Vec::new();
+        objects.push(Box::new(objects::Sphere {
+            origin: Location::new(1.0, 0.0, 0.0),
+            radius: 0.5,
+        }));
+        objects.push(Box::new(objects::Sphere {
+            origin: Location::new(1.0, 0.0, -100.5),
+            radius: 100.0,
+        }));
+        Self { objects }
+    }
+
+    /// Function returns the color of a given ray
+    pub fn get_ray_color(&self, ray: Ray, depth: u32) -> Color {
+        // If bouncing to much return black
+        if depth >= RAY_DEPTH_LIMIG {
+            return Color::black();
+        }
+
+        // Check if the ray is hitting something
+        if let (_hit_distance, Some(hit_normal)) = self.get_hit(ray) {
+            // Return color based on the normal
+            let hit_normal = hit_normal.as_slice();
+            // Calculate color based on the normal of the hit
+            Color::new(-hit_normal[1] / 2.0 + 0.5, 0.0, 0.0)
+                + Color::new(0.0, hit_normal[2] / 2.0 + 0.5, 0.0)
+                + Color::new(0.0, 0.0, -hit_normal[0] / 2.0 + 0.5)
+        } else {
+            // Did not hit an object.. Return some background color
+            let t = ray.direction.norm().z() / 2.0 + 0.5;
+            Color::white() * (1.0 - t) + Color::blue() * t
+        }
+    }
+
+    /// Iterate over all objects and get the one with a hit and the smales distance value
+    fn get_hit(&self, ray: Ray) -> (f64, Option<Direction>) {
+        self.objects
+            .iter()
+            .fold((f64::MAX, None), |act_hit, object| {
+                if let Some(hit) = object.get_hits(&ray) {
+                    // Check distance
+                    if hit.distance < act_hit.0 && hit.distance > 0.0 {
+                        (hit.distance, Some(hit.normal))
+                    } else {
+                        act_hit
+                    }
+                } else {
+                    act_hit
+                }
+            })
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 /// Desrcribes a ray
