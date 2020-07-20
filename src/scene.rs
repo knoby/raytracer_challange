@@ -7,13 +7,13 @@ const RAY_DEPTH_LIMIG: u32 = 50;
 const RENDER_NORMAL: bool = false;
 
 pub struct World {
-    objects: Vec<Box<dyn Hittable>>,
+    objects: Vec<Box<dyn Hittable + Send + Sync>>,
 }
 
 impl World {
     /// Create a sample world with a small and a very large sphere
     pub fn sample_world() -> Self {
-        let mut objects: Vec<Box<dyn Hittable>> = Vec::new();
+        let mut objects: Vec<Box<dyn Hittable + Send + Sync>> = Vec::new();
         objects.push(Box::new(objects::Sphere {
             origin: Location::new(1.0, 0.0, 0.0),
             radius: 0.5,
