@@ -10,7 +10,7 @@ const ANTI_ALIASING: u32 = 100;
 
 fn main() {
     // Create a test image
-    let mut my_image: image::RgbImage = image::RgbImage::new(400, 300);
+    let mut my_image: image::RgbImage = image::RgbImage::new(800, 600);
 
     {
         println!("Creating image...");
