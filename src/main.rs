@@ -7,12 +7,12 @@ use color::Color;
 use geometry::{Direction, Location};
 use scene::World;
 
-const ANTI_ALIASING: u32 = 100;
+const ANTI_ALIASING: u32 = 1000;
 
 fn main() {
     let start_time = std::time::Instant::now();
     // Create a test image
-    let mut my_image: image::RgbImage = image::RgbImage::new(400, 300);
+    let mut my_image: image::RgbImage = image::RgbImage::new(800, 600);
 
     {
         println!("Creating image...");
@@ -54,20 +54,26 @@ fn main() {
             let mut pool = threadpool::ThreadPool::new(4);
             // Iterate over the image
             for (u, v, _) in my_image.enumerate_pixels() {
-                // Check all objects for a hit
+                // Collect Rays
+                let mut rays = Vec::new();
                 for _ in 0..ANTI_ALIASING {
                     // Get a ray to the pixel from the cam
-                    let ray = cam.get_ray(u, v).unwrap();
-                    // Send the ray to the threadpool to calculate the color
-                    let world_clone = world.clone();
-                    let tx_color_clone = tx_color.clone();
-                    pool.execute(move || {
-                        let color = world_clone.get_ray_color(ray, 0);
-                        tx_color_clone
-                            .send((u as usize, v as usize, color))
-                            .unwrap();
-                    });
+                    rays.push(cam.get_ray(u, v).unwrap());
                 }
+                // Send the rays to the threadpool to calculate the color
+                let world_clone = world.clone();
+                let tx_color_clone = tx_color.clone();
+                pool.execute(move || {
+                    // Save the Colors in its own vector
+                    let mut color = Color::black();
+                    for ray in rays {
+                        color = color + world_clone.get_ray_color(ray, 0);
+                    }
+                    tx_color_clone
+                        .send((u as usize, v as usize, color))
+                        .unwrap();
+                });
+
                 // Collect Results up to this point
                 while let Ok((x, y, color)) = rx_color.try_recv() {
                     colors[x][y] = colors[x][y] + color;
