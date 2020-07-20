@@ -2,6 +2,7 @@
 
 use crate::color::Color;
 use crate::geometry::{Direction, Location};
+use rand::prelude::*;
 
 const RAY_DEPTH_LIMIG: u32 = 50;
 const RENDER_NORMAL: bool = false;
@@ -22,6 +23,7 @@ impl World {
             origin: Location::new(1.0, 0.0, -100.5),
             radius: 100.0,
         }));
+        // Create a simple and fast rng generator
         Self { objects }
     }
 
@@ -172,11 +174,11 @@ pub mod objects {
 
 /// Some helper function
 fn random_in_unit_sphere() -> Direction {
+    let mut rng = thread_rng();
     // Create a bad and ugly random generator
     let offset_dir = Direction::new(1.0, 1.0, 1.0);
     loop {
-        let rnd_dir =
-            Direction::new(rand::random(), rand::random(), rand::random()) * 2.0 - offset_dir;
+        let rnd_dir = Direction::new(rng.gen(), rng.gen(), rng.gen()) * 2.0 - offset_dir;
         if rnd_dir.length() <= 1.0 {
             return rnd_dir;
         }
