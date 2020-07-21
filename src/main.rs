@@ -20,13 +20,6 @@ fn main() {
         // Create a sample world
         let world = World::sample_world();
 
-        let mut progress = progress_bar::progress_bar::ProgressBar::new(my_image.height() as usize);
-        progress.set_action(
-            "Raytracing",
-            progress_bar::color::Color::Blue,
-            progress_bar::color::Style::Bold,
-        );
-
         // Define the camera
         let mut cam = camera::Camera::new(
             Location::origin(),
@@ -50,8 +43,25 @@ fn main() {
             colors.push(color_col);
         }
         {
+            // Check number of cores
+            let cores = num_cpus::get();
+            println!(
+                "Found {} cores. Spawning this number of render threads.",
+                cores
+            );
+
+            // Create a progress bar
+            let mut progress =
+                progress_bar::progress_bar::ProgressBar::new(my_image.height() as usize);
+            progress.set_action(
+                "Raytracing",
+                progress_bar::color::Color::Blue,
+                progress_bar::color::Style::Bold,
+            );
             // Create a threadpool for rendering the image
-            let mut pool = threadpool::ThreadPool::new(4);
+            let mut pool = threadpool::ThreadPool::new(cores);
+            // Number of active Jobs
+            let mut active_jobs = 0;
             // Iterate over the image
             for (u, v, _) in my_image.enumerate_pixels() {
                 // Collect Rays
@@ -63,6 +73,7 @@ fn main() {
                 // Send the rays to the threadpool to calculate the color
                 let world_clone = world.clone();
                 let tx_color_clone = tx_color.clone();
+                active_jobs += 1;
                 pool.execute(move || {
                     // Save the Colors in its own vector
                     let mut color = Color::black();
@@ -74,10 +85,16 @@ fn main() {
                         .unwrap();
                 });
 
-                // Collect Results up to this point
-                while let Ok((x, y, color)) = rx_color.try_recv() {
-                    colors[x][y] = colors[x][y] + color;
+                // Check if enough jobs are sceduled to keep all threads busy
+                while active_jobs == cores * 4 {
+                    // Collect Results up to this point
+                    while let Ok((x, y, color)) = rx_color.try_recv() {
+                        active_jobs -= 1;
+                        colors[x][y] = colors[x][y] + color;
+                    }
+                    std::thread::yield_now();
                 }
+
                 // Inc progress counter
                 if u == 0 {
                     progress.inc();
